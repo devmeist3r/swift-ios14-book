@@ -23,9 +23,13 @@ class RestaurantTableViewController: UITableViewController {
     
     lazy var dataSource = configureDataSource()
     
+    var restaurantIsFavorites = Array(repeating: false, count: 21)
+    
+    var restaurantIsVisited = [false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false]
+    
     override func viewDidLoad() {
         super.viewDidLoad()
-        
+        tableView.cellLayoutMarginsFollowReadableWidth = true
         tableView.dataSource = dataSource
         
         var snapshot = NSDiffableDataSourceSnapshot<Section, String>()
@@ -46,6 +50,7 @@ class RestaurantTableViewController: UITableViewController {
             cell.locationLabel.text = self.restaurantLocations[indexPath.row]
             cell.typeLabel.text = self.restaurantTypes[indexPath.row]
             cell.thumbnailImageView.image = UIImage(named: self.restaurantImages[indexPath.row])
+            cell.accessoryType = self.restaurantIsFavorites[indexPath.row] ? .checkmark : .none
             
             return cell
         })
@@ -56,6 +61,16 @@ class RestaurantTableViewController: UITableViewController {
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         let optionMenu = UIAlertController(title: nil, message: "What do you want to do?", preferredStyle: UIAlertController.Style.actionSheet)
         
+        if let popoverController = optionMenu.popoverPresentationController {
+            if let cell = tableView.cellForRow(at: indexPath) {
+                popoverController.sourceView = cell
+                popoverController.sourceRect = cell.bounds
+            }
+        }
+        
+        let cancelAction = UIAlertAction(title: "Cancel", style: .cancel, handler: nil)
+        optionMenu.addAction(cancelAction)
+        
         let reserveActionHandler = { (action:UIAlertAction!) -> Void in
             let alertMessage = UIAlertController(title: "Not available yet", message: "Sorry, this feature is not available yet. Please retry later.", preferredStyle: .alert)
             
@@ -64,13 +79,19 @@ class RestaurantTableViewController: UITableViewController {
         }
         
         let reserveAction = UIAlertAction(title: "Reserve a table", style: .default, handler: reserveActionHandler)
-        
-        let cancelAction = UIAlertAction(title: "Cancel", style: .cancel, handler: nil)
-        
-        
         optionMenu.addAction(reserveAction)
-        optionMenu.addAction(cancelAction)
+        
+        let favoriteAction = UIAlertAction(title: "Mark as favorite", style: .default, handler: { (action: UIAlertAction!) -> Void in
+            let cell = tableView.cellForRow(at: indexPath)
+            cell?.accessoryType = .checkmark
+            cell?.tintColor = .systemYellow
+            self.restaurantIsFavorites[indexPath.row] = true
+        })
+        
+        optionMenu.addAction(favoriteAction)
+        
         present(optionMenu, animated: true, completion: nil)
+        tableView.deselectRow(at: indexPath, animated: false)
     }
     
 }
